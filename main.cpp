@@ -33,6 +33,15 @@ Node::Node(int t, bool leaf) {
 
 Node::~Node() {
     // delete childs
+    delete[] this->x;
+    delete[] this->y;
+    delete[] this->z;
+    if (this->leaf == false) {
+        for (int i = 0; i <= this->size; i++) {
+            delete this->childs[i];
+        }
+    }
+    delete[] this->childs;
 }
 
 void Node::print() {
@@ -71,6 +80,9 @@ BTree::BTree() {
 
 BTree::~BTree() {
     // traverse tree and free nodes
+    if (this->root != NULL) {
+        delete this->root;
+    }
 }
 
 void BTree::print() {
@@ -188,7 +200,7 @@ void Node::split(int i, Node* y) {
 
 int main() {
     BTree* new_tree = new BTree;
-    
+
     scanf("%d", &new_tree->node_count);
     scanf("%d", &new_tree->t);
     scanf(" %c", &new_tree->key);
