@@ -114,7 +114,7 @@ void BTree::insert(int x, int y, char z) {
             s->split(0, r);
 
             int i = 0;
-            if (this->key == 'x' && s->x[0] < x || this->key == 'y' && s->y[0] < y || this->key == 'z' && s->z[0] < z) {
+            if ( (this->key == 'x' && s->x[0] < x ) || (this->key == 'y' && s->y[0] < y) || (this->key == 'z' && s->z[0] < z) ) {
                 i++;
             }
 
@@ -132,7 +132,7 @@ void Node::insertNonFull(int x, int y, char z, char key) {
     int i = this->size - 1;
 
     if (this->leaf == true) {
-        while (i >= 0 && key == 'x' && this->x[i] > x || i >= 0 && key == 'y' && this->y[i] > y || i >= 0 && key == 'z' && this->z[i] > z)
+        while ( (i >= 0 && key == 'x' && this->x[i] > x) || (i >= 0 && key == 'y' && this->y[i] > y) || (i >= 0 && key == 'z' && this->z[i] > z) )
         {
             this->x[i + 1] = this->x[i];
             this->y[i + 1] = this->y[i];
@@ -145,7 +145,7 @@ void Node::insertNonFull(int x, int y, char z, char key) {
         this->z[i + 1] = z;
         this->size++;
     } else {
-        while (i >= 0 && key == 'x' && this->x[i] > x || i >= 0 && key == 'y' && this->y[i] > y || i >= 0 && key == 'z' && this->z[i] > z) {
+        while ( (i >= 0 && key == 'x' && this->x[i] > x) || (i >= 0 && key == 'y' && this->y[i] > y) || (i >= 0 && key == 'z' && this->z[i] > z) ) {
             i--;
         }
 
@@ -153,7 +153,7 @@ void Node::insertNonFull(int x, int y, char z, char key) {
 
             split(i + 1, this->childs[i + 1]);
 
-            if (key == 'x' && this->x[i + 1] < x || key == 'y' && this->y[i + 1] < y || key == 'z' && this->z[i+1] < z) {
+            if ( (key == 'x' && this->x[i + 1] < x) || (key == 'y' && this->y[i + 1] < y) || (key == 'z' && this->z[i+1] < z) ) {
                 i++;
             }
         }
