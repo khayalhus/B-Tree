@@ -17,6 +17,8 @@ struct Node {
 
     void insertNonFull(int x, int y, char z, char key);    // insert to node
     void split(int index, Node* y); // y is the child of this node with order index and (y) is the node being split
+    bool remove(int x, int y, char z, char key);
+    void merge(int left_index, int right_index);
     void print();   // print node
 };
 
@@ -61,6 +63,194 @@ void Node::print() {
     }
 }
 
+bool Node::remove(int x, int y, char z, char key) {
+    int index = 0;
+
+    while ( (key == 'x' && index < this->size && this->x[index] < x) || (key == 'y' && index < this->size && this->y[index] < y) || (key == 'z' && index < this->size && this->z[index] < z) ) {
+        index++;
+    }
+
+    if (index > this->size) {
+        if (this->leaf == true) {
+            return false;
+        } else {
+            return this->childs[index - 1]->remove(x, y, z, key);
+        }
+    }
+
+    if ( (key == 'x' && this->x[index] == x ) || (key == 'y' && this->y[index] == y ) || (key == 'z' && this->z[index] == z ) ) {
+        if (this->leaf == true) {
+            // Case 1: key k is in a leaf node
+            for (int i = index + 1; i < this->size; i++) {
+                this->x[i - 1] = this->x[i];
+                this->y[i - 1] = this->y[i];
+                this->z[i - 1] = this->z[i];
+            }
+            this->size--;
+        }
+        else {
+            // Case 2: key k is in an internal node
+
+            if (this->childs[index]->size > t - 1) {
+                // - Subcase a: having a child with at least t keys preceding k
+                Node *traverse = this->childs[index];
+
+                while (traverse->leaf == false) {
+                    traverse = traverse->childs[traverse->size];
+                }
+
+                this->x[index] = traverse->x[traverse->size - 1];
+                this->y[index] = traverse->y[traverse->size - 1];
+                this->z[index] = traverse->z[traverse->size - 1];
+
+                this->childs[index]->remove(traverse->x[traverse->size - 1], traverse->y[traverse->size - 1], traverse->z[traverse->size - 1], key);
+
+            } else if (this->childs[index + 1]->size > t - 1) {
+                // – Subcase b: having a child with at least t keys following k
+                Node *traverse = this->childs[index + 1];
+                
+                while (traverse->leaf == false) {
+                    traverse = traverse->childs[0];
+                }
+
+                this->x[index] = traverse->x[0];
+                this->y[index] = traverse->y[0];
+                this->z[index] = traverse->z[0];
+
+                this->childs[index + 1]->remove(traverse->x[0], traverse->y[0], traverse->z[0], key);
+
+            } else {
+                // – Subcase c: both have t-1 keys
+                this->merge(index, index + 1);
+                this->childs[index]->remove(this->x[index], this->y[index], this->z[index], key);
+            }
+        }
+
+        return true;
+
+    } else if (this->leaf == false) {
+
+        if (this->childs[index]->size == t - 1) {
+            // Case 3: key k is not in an internal node and root of an appropriate subtree has only t-1 keys
+            if (index != 0 && this->childs[index - 1]->size >= t) {
+                // - Subcase a1: subtree has only t-1 keys having a left sibling with at least t keys
+                Node *child = this->childs[index];
+                Node *left_sibling = this->childs[index - 1];
+
+                for (int i = child->size - 1; i >= 0; i--) {
+                    child->x[i + 1] = child->x[i];
+                    child->y[i + 1] = child->y[i];
+                    child->z[i + 1] = child->z[i];
+                }
+
+                if (child->leaf == false) {
+                    for (int i = child->size; i >= 0; i--) {
+                        child->childs[i + 1] = child->childs[i];
+                    }
+                }
+
+                child->x[0] = this->x[index - 1];
+                child->y[0] = this->y[index - 1];
+                child->z[0] = this->z[index - 1];
+
+                if (child->leaf == false) {
+                    child->childs[0] = left_sibling->childs[left_sibling->size];
+                }
+
+                this->x[index - 1] = left_sibling->x[left_sibling->size - 1];
+                this->y[index - 1] = left_sibling->y[left_sibling->size - 1];
+                this->z[index - 1] = left_sibling->z[left_sibling->size - 1];
+
+                child->size++;
+                left_sibling->size--;
+            }
+            else if (index != this->size && this->childs[index + 1]->size >= t) {
+                // - Subcase a2: subtree has only t-1 keys having a right sibling with at least t keys
+                Node *child = this->childs[index];
+                Node *right_sibling = this->childs[index + 1];
+
+                child->x[child->size] = this->x[index];
+                child->y[child->size] = this->y[index];
+                child->z[child->size] = this->z[index];
+
+                if (child->leaf == false) {
+                    child->childs[(child->size) + 1] = right_sibling->childs[0];
+                }
+
+                this->x[index] = right_sibling->x[0];
+                this->y[index] = right_sibling->y[0];
+                this->z[index] = right_sibling->z[0];
+
+                for (int i = 1; i < right_sibling->size; i++) {
+                    right_sibling->x[i - 1] = right_sibling->x[i];
+                    right_sibling->y[i - 1] = right_sibling->y[i];
+                    right_sibling->z[i - 1] = right_sibling->z[i];
+                }
+
+                if (right_sibling->leaf == false) {
+                    for (int i = 1; i <= right_sibling->size; i++) {
+                        right_sibling->childs[i - 1] = right_sibling->childs[i];
+                    }
+                }
+
+                child->size++;
+                right_sibling->size--;
+            }
+            else {
+                // – Subcase b: both subtree and immediate siblings have t-1 keys
+                if (index == 0) {
+                    // merge with right sibling
+                    merge(index, index + 1);
+                }
+                else {
+                    // merge with left sibling
+                    merge(index - 1, index);
+                }
+            }
+        }
+
+        return this->childs[index]->remove(x, y, z, key);
+        
+    }
+
+    return false;
+}
+
+void Node::merge(int left_index, int right_index) {
+    Node *next_sibling = this->childs[right_index];
+
+    this->childs[left_index]->x[this->size] = this->x[left_index];
+    this->childs[left_index]->y[this->size] = this->y[left_index];
+    this->childs[left_index]->z[this->size] = this->z[left_index];
+
+    for (int i = 0; i < next_sibling->size; i++) {
+        this->childs[left_index]->x[i + t] = next_sibling->x[i];
+        this->childs[left_index]->y[i + t] = next_sibling->y[i];
+        this->childs[left_index]->z[i + t] = next_sibling->z[i];
+    }
+
+    if (this->childs[left_index]->leaf == false) {
+        for (int i = 0; i <= next_sibling->size; i++) {
+            this->childs[left_index]->childs[i + t] = next_sibling->childs[i];
+        }
+    }
+
+    for (int i = right_index; i < this->size; i++) {
+        this->x[i - 1] = this->x[i];
+        this->y[i - 1] = this->y[i];
+        this->z[i - 1] = this->z[i];
+    }
+
+    for (int i = right_index + 1; i <= this->size; i++) {
+        this->childs[i - 1] = this->childs[i];
+    }
+
+    this->childs[left_index]->size += next_sibling->size + 1;
+    this->size--;
+
+    delete next_sibling;
+}
+
 struct BTree {
     int node_count; // total node count
     int t; // degree of the tree
@@ -71,11 +261,15 @@ struct BTree {
     ~BTree();
 
     void insert(int x, int y, char z);  // inserts new key to B-Tree
+    void remove(int x, int y, char z);
     void print();   // prints tree
 };
 
 BTree::BTree() {
     root = NULL;
+    t = 2;
+    key = 'x';
+    node_count = 0;
 }
 
 BTree::~BTree() {
@@ -124,6 +318,8 @@ void BTree::insert(int x, int y, char z) {
             r->insertNonFull(x, y, z, this->key);
         }
     }
+
+    node_count++;
 }
 
 
@@ -161,7 +357,6 @@ void Node::insertNonFull(int x, int y, char z, char key) {
     }
 }
 
-
 void Node::split(int i, Node* y) {
     // split the child
     Node *z = new Node(y->t, y->leaf);
@@ -198,21 +393,52 @@ void Node::split(int i, Node* y) {
     this->size++;
 }
 
+void BTree::remove(int x, int y, char z) {
+    if (root != NULL) {
+        if (root->remove(x, y, z, this->key) == true) {
+            this->node_count--;
+        }
+        
+        if (node_count == 0) {
+            Node *temp = root;
+            if (root->leaf == true) {
+                root = NULL;
+            }
+            else {
+                root = root->childs[0];
+            }
+            delete temp;
+        }
+    }
+}
+
 int main() {
     BTree* new_tree = new BTree;
 
-    scanf("%d", &new_tree->node_count);
+    int input_count = 0;
+
+    scanf("%d", &input_count);
     scanf("%d", &new_tree->t);
     scanf(" %c", &new_tree->key);
 
     int x, y;
     char z;
-    for (int i = 0; i < new_tree->node_count; i++) {
+    for (int i = 0; i < input_count; i++) {
         scanf("%d", &x);
         scanf("%d", &y);
         scanf(" %c", &z);
         new_tree->insert(x, y, z);
     }
+
+    // get the key to be deleted
+    if (new_tree->key == 'x') {
+        scanf("%d", &x);
+    } else if (new_tree->key == 'y') {
+        scanf("%d", &y);
+    } else if (new_tree->key == 'z') {
+        scanf(" %c", &z);
+    }
+    new_tree->remove(x, y, z);
 
     new_tree->print();
 
